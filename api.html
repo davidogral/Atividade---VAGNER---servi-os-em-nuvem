@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicativo Multi-Funcionalidades</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #fff;
+            margin: 0;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .navbar {
+            background-color: #007BFF;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: #fff;
+            padding: 14px 20px;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: background-color 0.3s;
+        }
+        .navbar a:hover {
+            background-color: #0056b3;
+        }
+        .menu-toggle {
+            display: none;
+            cursor: pointer;
+        }
+        .menu-toggle span {
+            background-color: #fff;
+            display: block;
+            height: 3px;
+            width: 25px;
+            margin: 5px 0;
+            transition: all 0.3s;
+        }
+        .navbar-menu {
+            display: flex;
+            gap: 10px;
+        }
+        .navbar-menu a {
+            flex: 1;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 50px);
+        }
+        .container-content {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .container-content input, .container-content select {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #555;
+            border-radius: 5px;
+            width: calc(100% - 22px);
+            background-color: #555;
+            color: #fff;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        .container-content button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .container-content button:hover {
+            background-color: #0056b3;
+        }
+        .info-content {
+            margin-top: 20px;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        .toggle-tema {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border: none;
+            background-color: #555;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .toggle-tema:hover {
+            background-color: #444;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: inline-block;
+        }
+        .imprimir {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .imprimir:hover {
+            background-color: #218838;
+        }
+        @media (max-width: 600px) {
+            .navbar-menu {
+                display: none;
+                flex-direction: column;
+                width: 100%;
+                background-color: #007BFF;
+                position: absolute;
+                top: 50px;
+                left: 0;
+            }
+            .navbar-menu a {
+                padding: 10px;
+                text-align: left;
+            }
+            .navbar-menu.active {
+                display: flex;
+            }
+            .menu-toggle {
+                display: block;
+            }
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printableArea, #printableArea * {
+                visibility: visible;
+            }
+            #printableArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                background-color: #fff;
+                color: #000;
+            }
+        }
+    </style>
+</head>
+<body onload="exibirFuncionalidade('tempo')">
+    <div class="navbar">
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="navbar-menu" id="navbar-menu">
+            <a href="#" onclick="exibirFuncionalidade('tempo')">Previsão do Tempo</a>
+            <a href="#" onclick="exibirFuncionalidade('conversao')">Conversão de Moeda</a>
+        </div>
+    </div>
+    <div class="container">
+        <div class="container-content" id="container-content">
+            <h1 id="titulo">Aplicativo Multi-Funcionalidades</h1>
+            <div id="funcionalidade"></div>
+        </div>
+    </div>
+
+    <script>
+        let intervalId;
+
+        async function obterTempo() {
+            const chaveApi = '2c9e3f0ded8230c7047b2fe998033260';  // Substitua pela sua chave da API
+            const cidade = document.getElementById('cidade').value;
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cidade)}&appid=${chaveApi}&units=metric&lang=pt_br`;
+
+            const loadingIndicator = document.getElementById('loading');
+            const infoContent = document.getElementById('info-content');
+            const pontos = document.getElementById('pontos');
+
+            loadingIndicator.classList.add('active');
+            infoContent.style.opacity = 0;
+
+            intervalId = setInterval(() => {
+                pontos.textContent = pontos.textContent.length < 3 ? pontos.textContent + '.' : '.';
+            }, 500);
+
+            const resposta = await fetch(url);
+            const dados = await resposta.json();
+
+            clearInterval(intervalId);
+            loadingIndicator.classList.remove('active');
+
+            if (dados.cod === 200) {
+                infoContent.innerHTML = `
+                    <div id="printableArea">
+                        <h2>${dados.name}, ${dados.sys.country}</h2>
+                        <p>Temperatura: ${dados.main.temp}°C</p>
+                        <p>Umidade: ${dados.main.humidity}%</p>
+                        <p>Pressão: ${dados.main.pressure} hPa</p>
+                        <p>Clima: ${dados.weather[0].description}</p>
+                        <p>Velocidade do Vento: ${dados.wind.speed} m/s</p>
+                    </div>
+                `;
+                infoContent.style.opacity = 1;
+            } else {
+                infoContent.innerHTML = `
+                    <p>Cidade não encontrada. Verifique o nome da cidade e tente novamente.</p>
+                `;
+                infoContent.style.opacity = 1;
+            }
+        }
+
+        async function converterMoeda() {
+            const chaveApi = '171dfcceab41475b9ec9eb29b16803ac';  // Substitua pela sua chave da API do Open Exchange Rates
+            const valor = document.getElementById('valor').value;
+            const moedaOrigem = document.getElementById('moedaOrigem').value;
+            const moedaDestino = document.getElementById('moedaDestino').value;
+
+            const loadingIndicator = document.getElementById('loading');
+            const infoContent = document.getElementById('info-content');
+            const pontos = document.getElementById('pontos');
+
+            loadingIndicator.classList.add('active');
+            infoContent.style.opacity = 0;
+
+            intervalId = setInterval(() => {
+                pontos.textContent = pontos.textContent.length < 3 ? pontos.textContent + '.' : '.';
+            }, 500);
+
+            const resposta = await fetch(`https://openexchangerates.org/api/latest.json?app_id=${chaveApi}`);
+            const dados = await resposta.json();
+
+            clearInterval(intervalId);
+            loadingIndicator.classList.remove('active');
+
+            if (dados.rates) {
+                const taxaOrigem = dados.rates[moedaOrigem];
+                const taxaDestino = dados.rates[moedaDestino];
+                const valorConvertido = (valor / taxaOrigem) * taxaDestino;
+
+                infoContent.innerHTML = `
+                    <div id="printableArea">
+                        <h2>Conversão de Moeda</h2>
+                        <p>${valor} ${moedaOrigem} = ${valorConvertido.toFixed(2)} ${moedaDestino}</p>
+                    </div>
+                `;
+                infoContent.style.opacity = 1;
+            } else {
+                infoContent.innerHTML = `
+                    <p>Não foi possível converter a moeda. Tente novamente.</p>
+                `;
+                infoContent.style.opacity = 1;
+            }
+        }
+
+        function alternarTema() {
+            document.body.classList.toggle('tema-escuro');
+        }
+
+        function imprimirPagina() {
+            window.print();
+        }
+
+        function exibirFuncionalidade(funcionalidade) {
+            const containerContent = document.getElementById('container-content');
+            const titulo = document.getElementById('titulo');
+            const funcionalidadeDiv = document.getElementById('funcionalidade');
+
+            if (funcionalidade === 'tempo') {
+                titulo.textContent = 'Previsão do Tempo';
+                funcionalidadeDiv.innerHTML = `
+                    <input type="text" id="cidade" placeholder="Digite o nome da cidade">
+                    <button onclick="obterTempo()">Obter Tempo</button>
+                    <div class="loading" id="loading">Carregando<span id="pontos">.</span></div>
+                    <div class="info-content" id="info-content"></div>
+                    <button class="toggle-tema" onclick="alternarTema()">Alternar Tema</button>
+                    <button class="imprimir" onclick="imprimirPagina()">Imprimir</button>
+                `;
+            } else if (funcionalidade === 'conversao') {
+                titulo.textContent = 'Conversão de Moeda';
+                funcionalidadeDiv.innerHTML = `
+                    <input type="number" id="valor" placeholder="Digite o valor">
+                    <select id="moedaOrigem">
+                        <option value="USD">Dólar Americano</option>
+                        <option value="EUR">Euro</option>
+                        <option value="BRL">Real</option>
+                    </select>
+                    <select id="moedaDestino">
+                        <option value="USD">Dólar Americano</option>
+                        <option value="EUR">Euro</option>
+                        <option value="BRL">Real</option>
+                    </select>
+                    <button onclick="converterMoeda()">Converter Moeda</button>
+                    <div class="loading" id="loading">Carregando<span id="pontos">.</span></div>
+                    <div class="info-content" id="info-content"></div>
+                    <button class="toggle-tema" onclick="alternarTema()">Alternar Tema</button>
+                    <button class="imprimir" onclick="imprimirPagina()">Imprimir</button>
+                `;
+            }
+        }
+
+        function toggleMenu() {
+            const navbarMenu = document.getElementById('navbar-menu');
+            navbarMenu.classList.toggle('active');
+        }
+
+        // Adiciona o estilo para tema claro
+        const estiloTemaClaro = document.createElement('style');
+        estiloTemaClaro.innerHTML = `
+            .tema-escuro {
+                background-color: #f2f2f2;
+                color: #333;
+            }
+            .tema-escuro .container-content {
+                background-color: #fff;
+                color: #333;
+            }
+            .tema-escuro .container-content input, .tema-escuro .container-content select {
+                background-color: #ddd;
+                color: #333;
+                border: 1px solid #ccc;
+            }
+            .tema-escuro .container-content button {
+                background-color: #007BFF;
+                color: white;
+            }
+            .tema-escuro .container-content button:hover {
+                background-color: #0056b3;
+            }
+            .tema-escuro .toggle-tema {
+                background-color: #ddd;
+                color: #333;
+            }
+            .tema-escuro .toggle-tema:hover {
+                background-color: #ccc;
+            }
+            .tema-escuro .imprimir {
+                background-color: #28a745;
+                color: white;
+            }
+            .tema-escuro .imprimir:hover {
+                background-color: #218838;
+            }
+        `;
+        document.head.appendChild(estiloTemaClaro);
+    </script>
+</body>
+</html>
